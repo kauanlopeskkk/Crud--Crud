@@ -30,24 +30,37 @@ def autenticar_usuario(credentials: HTTPBasicCredentials = Depends(security)):
             detail="USUARIO OU SENHA INCORRETOS",
             headers={"WWW-Authenticate": "Basic"},
         )
+    return credentials
 @app.get("/")
-def read_root():
-    return {"message": "Bem-vindo ao sistema de contas!"}
-
-
+def perfil(credentials: HTTPBasicCredentials = Depends(autenticar_usuario)):
+    return {"message": f"Bem-vindo, {credentials.username}!"}
 
 @app.get("/contas", response_model=list[Conta])
 def get_contas(page: int = 1, limit: int = 5, credentials: HTTPBasicCredentials = Depends(autenticar_usuario)):
     if page < 1 or limit < 1:
         raise HTTPException(status_code=400, detail="Parâmetros inválidos. 'page' e 'limit' devem ser maiores que zero.")
-    contas_paginadas = sorted(conta, key=lambda x: x.nome)
+    contas_ordenadas = sorted(conta, key=lambda x: x.nome)
     start = (page - 1) * limit
     end = start + limit
-    contas_paginadas = conta[start:end]
+    return contas_ordenadas[start:end]
+
+@app.post("/contas")
+def criar_conta(nova_conta: Conta, credentials: HTTPBasicCredentials = Depends(autenticar_usuario)):
+    conta.append(nova_conta)
+    return {"message": "Conta criada com sucesso!", "conta": nova_conta}
+
+@app.put("/contas/{indice}")
+def atualizar_conta(indice: int, conta_atualizada: Conta, credentials: HTTPBasicCredentials = Depends(autenticar_usuario)):
+    if indice < 0 or indice >= len(conta):
+        raise HTTPException(status_code=404, detail="Conta não encontrada.")
+    conta[indice] = conta_atualizada
+    return {"message": "Conta atualizada com sucesso!", "conta": conta_atualizada}
+
+@app.delete("/contas/{indice}")
+def deletar_conta(indice: int, credentials: HTTPBasicCredentials = Depends(autenticar_usuario)):
+    if indice < 0 or indice >= len(conta):
+        raise HTTPException(status_code=404, detail="Conta não encontrada.")
+    conta_deletada = conta.pop(indice)
+    return {"message": "Conta deletada com sucesso!", "conta": conta_deletada}
     
-    return{
-        "page": page,
-        "limit": limit,
-        "total_contas": len(conta),
-        "contas": contas_paginadas
-    }
+ 
