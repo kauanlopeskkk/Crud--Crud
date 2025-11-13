@@ -45,4 +45,9 @@ def get_contas(page: int = 1, limit: int = 5, credentials: HTTPBasicCredentials 
     end = start + limit
     contas_paginadas = conta[start:end]
     
-    return contas_paginadas
+    return{
+        "page": page,
+        "limit": limit,
+        "total_contas": len(conta),
+        "contas": contas_paginadas
+    }
